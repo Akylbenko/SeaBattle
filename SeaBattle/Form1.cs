@@ -713,10 +713,137 @@ namespace SeaBattle
                 UpdateStatus($"Ошибка отправки: {ex.Message}");
             }
         }
+        private void UpdateStatus(string text)
+        {
+            statusLabel.Text = text;
+        }
 
-    public class GameMessage
+        private void ResetGameClick(object sender, EventArgs e)
+        {
+            ResetGame();
+        }
+
+        private void ResetGame()
+        {
+            ResetMyMap();
+            ResetEnemyMap();
+
+            myShips.Clear();
+            enemyShips.Clear();
+
+            currentShipIndex = 0;
+            shipsPlaced = false;
+            gameStarted = false;
+            isPlacingMode = true;
+            isMyTurn = false;
+
+            readyButton.Enabled = false;
+
+            for (int i = 1; i < MAP_SIZE; i++)
+            {
+                for (int j = 1; j < MAP_SIZE; j++)
+                {
+                    myButtons[i, j].Enabled = true;
+                    enemyButtons[i, j].Enabled = false;
+                }
+            }
+
+            UpdateStatus("Расставьте корабли");
+        }
+
+        private void ResetMyMap()
+        {
+            for (int i = 0; i < MAP_SIZE; i++)
+            {
+                for (int j = 0; j < MAP_SIZE; j++)
+                {
+                    myMap[i, j] = 0;
+                    if (i == 0 || j == 0)
+                    {
+                        myButtons[i, j].BackColor = Color.LightGray;
+                    }
+                    else
+                    {
+                        myButtons[i, j].BackColor = Color.Azure;
+                        myButtons[i, j].Text = "";
+                    }
+                }
+            }
+        }
+
+        private void ResetEnemyMap()
+        {
+            for (int i = 0; i < MAP_SIZE; i++)
+            {
+                for (int j = 0; j < MAP_SIZE; j++)
+                {
+                    enemyMap[i, j] = 0;
+                    if (i == 0 || j == 0)
+                    {
+                        enemyButtons[i, j].BackColor = Color.LightGray;
+                    }
+                    else
+                    {
+                        enemyButtons[i, j].BackColor = Color.Azure;
+                        enemyButtons[i, j].Text = "";
+                        enemyButtons[i, j].Enabled = false;
+                    }
+                }
+            }
+        }
+
+        private void ReadyButtonClick(object sender, EventArgs e)
+        {
+            if (!shipsPlaced || !connected) return;
+
+            isPlacingMode = false;
+            readyButton.Enabled = false;
+            autoPlaceButton.Enabled = false;
+            resetButton.Enabled = false;
+
+            for (int i = 1; i < MAP_SIZE; i++)
+            {
+                for (int j = 1; j < MAP_SIZE; j++)
+                {
+                    myButtons[i, j].Enabled = false;
+                }
+            }
+
+            SendMessage(new GameMessage
+            {
+                Type = "ready",
+                IsHost = server != null 
+            });
+
+            UpdateStatus("Ожидаем готовности соперника...");
+        }
+
+        private void EnableEnemyField(bool enable)
+        {
+            for (int i = 1; i < MAP_SIZE; i++)
+            {
+                for (int j = 1; j < MAP_SIZE; j++)
+                {
+                    enemyButtons[i, j].Enabled = enable && enemyMap[i, j] == 0;
+                }
+            }
+        }
+
+        private void DisableAllButtons()
+        {
+            for (int i = 1; i < MAP_SIZE; i++)
+            {
+                for (int j = 1; j < MAP_SIZE; j++)
+                {
+                    enemyButtons[i, j].Enabled = false;
+                    myButtons[i, j].Enabled = false;
+                }
+            }
+        }
+
+        public class GameMessage
     {
-        public string Type { get; set; } // "ready", "shot", "shot_result"
+        public string Type { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
         public bool Hit { get; set; }
